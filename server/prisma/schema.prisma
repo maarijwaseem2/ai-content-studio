@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String    @id @default(uuid())
+  email              String    @unique
+  passwordHash       String
+  credits            Int       @default(250)
+  role               String    @default("USER") // USER or ADMIN
+  subscriptionStatus String    @default("FREE") // FREE, ACTIVE, EXPIRED
+  subscriptionTier   String?   // BASIC, PREMIUM, etc.
+  items              Content[]
+  requests           SubscriptionRequest[]
+  createdAt          DateTime  @default(now())
+}
+
+model SubscriptionRequest {
+  id          String   @id @default(uuid())
+  userId      String
+  tier        String
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  paymentInfo String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Content {
+  id              String   @id @default(uuid())
+  userId          String
+  productName     String
+  category        String?
+  tone            String
+  language        String
+  inputJson       Json     // Store raw GenerateInput
+  outputJson      Json     // Store raw GeneratedContent
+  tokenUsage      Json?    // Store OpenAI usage stats
+  isSaved         Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
+}

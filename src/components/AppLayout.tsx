@@ -18,7 +18,7 @@ const titles: Record<string, string> = {
 
 export default function AppLayout() {
   const { pathname } = useLocation();
-  const credits = useStore((s) => s.credits);
+  const { user, credits } = useStore();
   const title =
     titles[pathname] ||
     (pathname.startsWith("/app/content/") ? "Content Editor" : "Lexicon");
@@ -35,17 +35,21 @@ export default function AppLayout() {
               <h1 className="text-sm font-medium tracking-tight">{title}</h1>
             </div>
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-secondary/40 text-xs">
-                <span className="size-1.5 rounded-full bg-highlight" />
-                <span className="font-mono tabular-nums">{credits}</span>
-                <span className="text-muted-foreground">credits</span>
-              </div>
-              <Button asChild size="sm" className="rounded-full">
-                <NavLink to="/app/generate">
-                  <Sparkles className="size-3.5" />
-                  Generate
-                </NavLink>
-              </Button>
+              {user?.role !== "ADMIN" && (
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-secondary/40 text-xs">
+                  <span className="size-1.5 rounded-full bg-highlight" />
+                  <span className="font-mono tabular-nums">{credits}</span>
+                  <span className="text-muted-foreground">credits</span>
+                </div>
+              )}
+              {user?.role !== "ADMIN" && (
+                <Button asChild size="sm" className="rounded-full">
+                  <NavLink to="/app/generate">
+                    <Sparkles className="size-3.5" />
+                    Generate
+                  </NavLink>
+                </Button>
+              )}
             </div>
           </header>
           <main className="flex-1 overflow-x-hidden">

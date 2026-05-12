@@ -1,11 +1,30 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useStore } from "@/lib/store";
+import { toast } from "sonner";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar, SidebarFooter, SidebarHeader,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+  SidebarFooter,
+  SidebarHeader,
 } from "@/components/ui/sidebar";
 import {
-  LayoutDashboard, Sparkles, BookmarkCheck, FileText, LayoutTemplate,
-  History, CreditCard, Settings, ShieldCheck,
+  LayoutDashboard,
+  Sparkles,
+  BookmarkCheck,
+  FileText,
+  LayoutTemplate,
+  History,
+  CreditCard,
+  Settings,
+  ShieldCheck,
+  LogOut,
 } from "lucide-react";
 
 const main = [
@@ -26,6 +45,14 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
+  const nav = useNavigate();
+  const { user, credits, logout } = useStore();
+
+  const handleLogout = () => {
+    logout();
+    toast.success("Signed out.");
+    nav("/login");
+  };
 
   const isActive = (url: string, end?: boolean) =>
     end ? pathname === url : pathname === url || pathname.startsWith(url + "/");
@@ -37,43 +64,64 @@ export function AppSidebar() {
           <div className="size-7 rounded-md bg-foreground flex items-center justify-center">
             <span className="text-background text-sm font-semibold">L</span>
           </div>
-          {!collapsed && <span className="font-semibold tracking-tight">Lexicon.</span>}
+          {!collapsed && (
+            <span className="font-semibold tracking-tight">Lexicon.</span>
+          )}
         </NavLink>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="label-eyebrow">Workspace</SidebarGroupLabel>
+          <SidebarGroupLabel className="label-eyebrow">
+            Workspace
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {main.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url, item.end)}>
-                    <NavLink to={item.url} end={item.end}>
-                      <item.icon className="size-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {main
+                .filter(() => user?.role !== "ADMIN")
+                .map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.url, item.end)}
+                    >
+                      <NavLink to={item.url} end={item.end}>
+                        <item.icon className="size-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="label-eyebrow">Account</SidebarGroupLabel>
+          <SidebarGroupLabel className="label-eyebrow">
+            Account
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {account.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink to={item.url}>
-                      <item.icon className="size-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {account
+                .filter((item) =>
+                  item.title === "Admin" ? user?.role === "ADMIN" : true,
+                )
+                .map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                      <NavLink to={item.url}>
+                        <item.icon className="size-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleLogout}>
+                  <LogOut className="size-4 text-muted-foreground" />
+                  {!collapsed && <span>Sign Out</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -82,9 +130,21 @@ export function AppSidebar() {
       <SidebarFooter className="p-3">
         {!collapsed && (
           <div className="rounded-lg border border-border bg-secondary/50 p-3 text-xs">
-            <div className="label-eyebrow mb-1">Plan</div>
-            <div className="font-medium">Starter</div>
-            <div className="text-muted-foreground mt-1">250 credits left</div>
+            <div className="label-eyebrow mb-1">
+              Account: {user?.role === "ADMIN" ? "Admin" : "User"}
+            </div>
+            <div className="font-medium">
+              {user?.role === "ADMIN"
+                ? "Premium Admin"
+                : user?.subscriptionStatus === "ACTIVE"
+                  ? user?.subscriptionTier
+                  : "Free"}
+            </div>
+            {user?.role !== "ADMIN" && (
+              <div className="text-muted-foreground mt-1">
+                {credits} credits left
+              </div>
+            )}
           </div>
         )}
       </SidebarFooter>
