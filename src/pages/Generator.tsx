@@ -72,6 +72,20 @@ export default function Generator() {
       setOutput(data.outputJson);
       setGeneratedId(data.id);
 
+      // Add new item to store so ContentDetail and History work immediately
+      const newItem = {
+        id: data.id,
+        productName: data.productName,
+        category: data.category || "",
+        tone: data.tone,
+        language: data.language,
+        createdAt: new Date(data.createdAt).getTime(),
+        input: data.inputJson,
+        content: data.outputJson,
+        saved: data.isSaved,
+      };
+      useStore.getState().setItems([newItem, ...useStore.getState().items]);
+
       // Update user credits in store
       if (user) {
         setUser({ ...user, credits: user.credits - 1 });
@@ -299,9 +313,18 @@ export default function Generator() {
               </Button>
               {generatedId && (
                 <Button
-                  onClick={() => {
-                    useStore.getState().toggleSave(generatedId);
-                    toast.success("Saved.");
+                  onClick={async () => {
+                    try {
+                      await api.patch(`/content/${generatedId}`, {
+                        isSaved: true,
+                      });
+                      useStore.getState().updateItem(generatedId, {
+                        saved: true,
+                      });
+                      toast.success("Saved to library.");
+                    } catch {
+                      toast.error("Failed to save.");
+                    }
                   }}
                   className="rounded-full"
                 >
