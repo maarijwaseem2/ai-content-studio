@@ -4,11 +4,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useStore } from "@/lib/store";
-import api from "@/lib/api";
+import api, { warmupBackend } from "@/lib/api";
 
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import VerifyAccount from "./pages/VerifyAccount";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Generator from "./pages/Generator";
@@ -22,34 +24,39 @@ import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound.tsx";
 
 const App = () => {
-  const { user, setUser, setItems } = useStore();
+  const { setUser, setItems } = useStore();
   const token = localStorage.getItem("access_token");
 
   useEffect(() => {
-    if (token && !user) {
-      Promise.all([api.get("/user/profile"), api.get("/content")])
-        .then(([{ data: profile }, { data: items }]) => {
-          setUser(profile);
-          setItems(
-            items.map((it: any) => ({
-              id: it.id,
-              productName: it.productName,
-              category: it.category,
-              tone: it.tone,
-              language: it.language,
-              createdAt: new Date(it.createdAt).getTime(),
-              input: it.inputJson,
-              content: it.outputJson,
-              saved: it.isSaved,
-            })),
-          );
-        })
-        .catch(() => {
-          localStorage.removeItem("access_token");
-          setUser(null);
-        });
-    }
-  }, [token, user, setUser, setItems]);
+    warmupBackend();
+  }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    Promise.all([api.get("/user/profile"), api.get("/content")])
+      .then(([{ data: profile }, { data: items }]) => {
+        setUser(profile);
+        setItems(
+          items.map((it: any) => ({
+            id: it.id,
+            productName: it.productName,
+            category: it.category,
+            tone: it.tone,
+            language: it.language,
+            createdAt: new Date(it.createdAt).getTime(),
+            input: it.inputJson,
+            content: it.outputJson,
+            saved: it.isSaved,
+          })),
+        );
+      })
+      .catch(() => {
+        localStorage.removeItem("access_token");
+        setUser(null);
+      });
+  }, [token, setUser, setItems]);
+
+  const user = useStore((s) => s.user);
 
   return (
     <TooltipProvider>
@@ -60,6 +67,8 @@ const App = () => {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-account" element={<VerifyAccount />} />
           <Route
             path="/app"
             element={token ? <AppLayout /> : <Navigate to="/login" />}

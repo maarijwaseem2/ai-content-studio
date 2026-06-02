@@ -2,6 +2,7 @@ import { Outlet, useLocation, NavLink } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { useStore } from "@/lib/store";
+import { getCreditLimit } from "@/lib/plans";
 import { Button } from "./ui/button";
 import { Sparkles } from "lucide-react";
 
@@ -19,6 +20,11 @@ const titles: Record<string, string> = {
 export default function AppLayout() {
   const { pathname } = useLocation();
   const { user, credits } = useStore();
+  const creditLimit = getCreditLimit(
+    credits,
+    user?.subscriptionTier,
+    user?.creditLimit,
+  );
   const title =
     titles[pathname] ||
     (pathname.startsWith("/app/content/") ? "Content Editor" : "Lexicon");
@@ -38,7 +44,12 @@ export default function AppLayout() {
               {user?.role !== "ADMIN" && (
                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-secondary/40 text-xs">
                   <span className="size-1.5 rounded-full bg-highlight" />
-                  <span className="font-mono tabular-nums">{credits}</span>
+                  <span className="font-mono tabular-nums">
+                    {credits}
+                    <span className="text-muted-foreground font-normal">
+                      /{creditLimit}
+                    </span>
+                  </span>
                   <span className="text-muted-foreground">credits</span>
                 </div>
               )}

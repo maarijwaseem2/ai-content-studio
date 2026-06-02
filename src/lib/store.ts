@@ -19,6 +19,7 @@ interface User {
   id: string;
   email: string;
   credits: number;
+  creditLimit?: number;
   role: "USER" | "ADMIN";
   subscriptionStatus: "FREE" | "ACTIVE" | "EXPIRED";
   subscriptionTier: string | null;

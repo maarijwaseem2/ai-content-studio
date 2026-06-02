@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useStore } from "@/lib/store";
 import { ArrowRight, Check, Sparkles, Type, Hash, ListChecks, Megaphone } from "lucide-react";
 
 const features = [
@@ -12,44 +13,67 @@ const features = [
 
 const plans = [
   { name: "Free", price: "$0", credits: "20", popular: false, perks: ["20 credits / month", "1 saved doc", "Basic tones"] },
-  { name: "Starter", price: "$19", credits: "250", popular: true, perks: ["250 credits / month", "Unlimited saves", "All tones & languages", "TXT / DOC export"] },
-  { name: "Pro", price: "$49", credits: "1,000", popular: false, perks: ["1,000 credits / month", "Brand voice memory", "Priority generation", "Email support"] },
+  { name: "Starter", price: "$19", credits: "250", popular: true, perks: ["250 credits / month", "Unlimited saves", "All tones & languages"] },
+  { name: "Pro", price: "$49", credits: "1,000", popular: false, perks: ["1,000 credits / month", "Priority generation", "Email support"] },
 ];
 
 export default function Landing() {
+  const user = useStore((s) => s.user);
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("access_token")
+      : null;
+  const isAuthed = Boolean(user || token);
+
   return (
     <div className="min-h-screen bg-paper text-foreground">
       {/* Nav */}
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-6 px-5 py-2.5 frosted rounded-full">
-        <NavLink to="/" className="font-semibold tracking-tight text-sm">Lexicon.</NavLink>
-        <div className="hidden md:flex gap-5 text-xs text-muted-foreground">
+      <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-5 px-5 py-2 frosted rounded-full border border-border-strong/40 shadow-sm">
+        <NavLink to="/" className="font-bold tracking-tight text-sm text-foreground">
+          Lexicon.
+        </NavLink>
+        <div className="hidden md:flex gap-5 text-xs font-medium text-foreground/70">
           <a href="#features" className="hover:text-foreground transition-colors">Features</a>
           <a href="#how" className="hover:text-foreground transition-colors">How it works</a>
           <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
         </div>
         <div className="w-px h-4 bg-border-strong" />
-        <NavLink to="/login" className="text-xs font-medium hover:opacity-70">Sign in</NavLink>
-        <Button asChild size="sm" className="rounded-full h-7 text-xs">
-          <NavLink to="/signup">Get started</NavLink>
-        </Button>
+        {isAuthed ? (
+          <Button asChild size="sm" className="rounded-full h-7 text-xs">
+            <NavLink to="/app">Open app <ArrowRight className="size-3" /></NavLink>
+          </Button>
+        ) : (
+          <>
+            <NavLink to="/login" className="text-xs font-medium text-foreground/80 hover:text-foreground">Sign in</NavLink>
+            <Button asChild size="sm" className="rounded-full h-7 text-xs">
+              <NavLink to="/signup">Get started</NavLink>
+            </Button>
+          </>
+        )}
       </nav>
 
       {/* Hero */}
-      <header className="pt-40 pb-20 px-6 max-w-3xl mx-auto text-center flex flex-col gap-6">
+      <header className="pt-28 md:pt-32 pb-20 px-6 max-w-3xl mx-auto text-center flex flex-col gap-6">
         <div className="inline-flex self-center items-center gap-2 px-3 py-1 rounded-full border border-border bg-surface/60 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           <span className="size-1.5 rounded-full bg-highlight animate-pulse" />
           AI Engine v1.0 — Online
         </div>
-        <h1 className="text-5xl md:text-6xl font-semibold tracking-tight text-balance leading-[1.05]">
-          Generate product descriptions in seconds.
+        <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-balance leading-[1.05]">
+          Generate Product Descriptions In Seconds.
         </h1>
         <p className="text-lg text-muted-foreground text-pretty max-w-[52ch] mx-auto leading-relaxed">
-          Hand off raw specifications. Receive publish-ready, tone-perfect descriptions, SEO meta, bullet points, and ad copy — instantly.
+          Hand Off Raw Specifications. Receive Publish-Ready, Tone-Perfect Descriptions, SEO Meta, Bullet Points, And Ad Copy — Instantly.
         </p>
         <div className="flex justify-center gap-3">
-          <Button asChild size="lg" className="rounded-full">
-            <NavLink to="/signup">Start generating <ArrowRight className="size-4" /></NavLink>
-          </Button>
+          {isAuthed ? (
+            <Button asChild size="lg" className="rounded-full">
+              <NavLink to="/app">Open app <ArrowRight className="size-4" /></NavLink>
+            </Button>
+          ) : (
+            <Button asChild size="lg" className="rounded-full">
+              <NavLink to="/signup">Start generating <ArrowRight className="size-4" /></NavLink>
+            </Button>
+          )}
           <Button asChild size="lg" variant="outline" className="rounded-full">
             <a href="#features">See how it works</a>
           </Button>
@@ -89,7 +113,10 @@ export default function Landing() {
       <section id="features" className="mt-32 max-w-[1200px] mx-auto px-6">
         <div className="text-center mb-16">
           <div className="label-eyebrow mb-3">Everything you need</div>
-          <h2 className="text-4xl font-semibold tracking-tight">One brief. Six outputs.</h2>
+          <h2 className="text-4xl font-bold tracking-tight">One Brief. Six Outputs.</h2>
+          <p className="text-sm text-muted-foreground mt-3 max-w-md mx-auto">
+            Available in 16+ languages — English, Spanish, French, German, Arabic, Hindi, Chinese, and more.
+          </p>
         </div>
         <div className="grid md:grid-cols-3 gap-4">
           {features.map((f) => (
@@ -108,7 +135,7 @@ export default function Landing() {
       <section id="how" className="mt-32 max-w-[1200px] mx-auto px-6">
         <div className="text-center mb-16">
           <div className="label-eyebrow mb-3">Workflow</div>
-          <h2 className="text-4xl font-semibold tracking-tight">Four steps. Zero friction.</h2>
+          <h2 className="text-4xl font-bold tracking-tight">Four Steps. Zero Friction.</h2>
         </div>
         <div className="grid md:grid-cols-4 gap-4">
           {["Add product details", "Choose tone", "Generate content", "Copy or save"].map((step, i) => (
@@ -138,7 +165,7 @@ export default function Landing() {
       <section id="pricing" className="mt-32 max-w-[1200px] mx-auto px-6">
         <div className="text-center mb-16">
           <div className="label-eyebrow mb-3">Pricing</div>
-          <h2 className="text-4xl font-semibold tracking-tight">Simple, credit-based.</h2>
+          <h2 className="text-4xl font-bold tracking-tight">Simple, Credit-Based.</h2>
         </div>
         <div className="grid md:grid-cols-3 gap-4">
           {plans.map((p) => (
@@ -164,7 +191,7 @@ export default function Landing() {
                 ))}
               </ul>
               <Button asChild variant={p.popular ? "default" : "outline"} className="rounded-full mt-auto">
-                <NavLink to="/signup">Choose {p.name}</NavLink>
+                <NavLink to={isAuthed ? "/app/pricing" : "/signup"}>Choose {p.name}</NavLink>
               </Button>
             </div>
           ))}

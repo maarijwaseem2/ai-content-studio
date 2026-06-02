@@ -1,5 +1,6 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
+import { getCreditLimit } from "@/lib/plans";
 import { toast } from "sonner";
 import {
   Sidebar,
@@ -47,6 +48,11 @@ export function AppSidebar() {
   const { pathname } = useLocation();
   const nav = useNavigate();
   const { user, credits, logout } = useStore();
+  const creditLimit = getCreditLimit(
+    credits,
+    user?.subscriptionTier,
+    user?.creditLimit,
+  );
 
   const handleLogout = () => {
     logout();
@@ -60,7 +66,10 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="px-4 py-5">
-        <NavLink to="/" className="flex items-center gap-2">
+        <NavLink
+          to={user?.role === "ADMIN" ? "/app/admin" : "/app"}
+          className="flex items-center gap-2"
+        >
           <div className="size-7 rounded-md bg-foreground flex items-center justify-center">
             <span className="text-background text-sm font-semibold">L</span>
           </div>
@@ -142,7 +151,7 @@ export function AppSidebar() {
             </div>
             {user?.role !== "ADMIN" && (
               <div className="text-muted-foreground mt-1">
-                {credits} credits left
+                {credits} of {creditLimit} credits left
               </div>
             )}
           </div>

@@ -1,7 +1,23 @@
 // Mock content generator — simulates AI output with deterministic, varied templates.
 export type Tone = "Professional" | "Friendly" | "SEO-friendly" | "Luxury" | "Simple";
 export type Length = "Short" | "Medium" | "Long";
-export type Language = "English" | "Roman Urdu" | "Urdu";
+export type Language =
+  | "English"
+  | "Roman Urdu"
+  | "Urdu"
+  | "Spanish"
+  | "French"
+  | "German"
+  | "Italian"
+  | "Portuguese"
+  | "Arabic"
+  | "Hindi"
+  | "Chinese (Simplified)"
+  | "Japanese"
+  | "Korean"
+  | "Turkish"
+  | "Russian"
+  | "Indonesian";
 
 export interface GenerateInput {
   productName: string;
@@ -37,6 +53,19 @@ const urduOpen: Record<Language, string> = {
   English: "",
   "Roman Urdu": "Pesh hai ek behtareen ",
   Urdu: "پیش ہے ایک بہترین ",
+  Spanish: "Presentamos un excelente ",
+  French: "Découvrez un excellent ",
+  German: "Entdecken Sie ein hervorragendes ",
+  Italian: "Scopri un eccellente ",
+  Portuguese: "Apresentamos um excelente ",
+  Arabic: "نقدم منتجاً ممتازاً ",
+  Hindi: "प्रस्तुत है एक बेहतरीन ",
+  "Chinese (Simplified)": "为您呈现一款卓越的 ",
+  Japanese: "優れた製品をご紹介します ",
+  Korean: "뛰어난 제품을 소개합니다 ",
+  Turkish: "Mükemmel bir ürün sunuyoruz ",
+  Russian: "Представляем превосходный ",
+  Indonesian: "Memperkenalkan produk terbaik ",
 };
 
 function pickFeature(features: string, i: number): string {
@@ -86,4 +115,21 @@ export function generateMockContent(input: GenerateInput): GeneratedContent {
 
 export const TONES: Tone[] = ["Professional", "Friendly", "SEO-friendly", "Luxury", "Simple"];
 export const LENGTHS: Length[] = ["Short", "Medium", "Long"];
-export const LANGUAGES: Language[] = ["English", "Roman Urdu", "Urdu"];
+export const LANGUAGES: Language[] = [
+  "English",
+  "Roman Urdu",
+  "Urdu",
+  "Spanish",
+  "French",
+  "German",
+  "Italian",
+  "Portuguese",
+  "Arabic",
+  "Hindi",
+  "Chinese (Simplified)",
+  "Japanese",
+  "Korean",
+  "Turkish",
+  "Russian",
+  "Indonesian",
+];

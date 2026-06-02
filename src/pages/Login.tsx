@@ -3,8 +3,10 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/PasswordInput";
 import api from "@/lib/api";
 import { useStore } from "@/lib/store";
+import { isValidEmail } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function Login() {
@@ -15,18 +17,44 @@ export default function Login() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    const email = (formData.get("email") as string).trim();
     const password = formData.get("password") as string;
+
+    if (!isValidEmail(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    if (!password || password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
 
     setLoading(true);
     try {
       const { data } = await api.post("/auth/login", { email, password });
+      if (data?.requiresVerification) {
+        toast.info("Verify your account to continue");
+        nav("/verify-account", {
+          state: { email: data.email, otp: data.otp, fromLogin: true },
+        });
+        return;
+      }
       localStorage.setItem("access_token", data.access_token);
       setUser(data.user);
       toast.success("Welcome back!");
       nav("/app");
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Invalid credentials");
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.message;
+      if (!err?.response) {
+        toast.error("Cannot reach server. Please try again.");
+      } else if (status === 401) {
+        toast.error("Invalid email or password");
+      } else if (status === 403) {
+        toast.error(msg || "Account is not accessible");
+      } else {
+        toast.error(msg || "Login failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -54,6 +82,7 @@ export default function Login() {
         <form
           onSubmit={onSubmit}
           className="w-full max-w-sm flex flex-col gap-5"
+          noValidate
         >
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
@@ -70,20 +99,26 @@ export default function Login() {
               name="email"
               type="email"
               placeholder="you@company.com"
+              autoComplete="email"
               required
             />
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
               <Label htmlFor="password">Password</Label>
-              <a
-                href="#"
+              <NavLink
+                to="/forgot-password"
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 Forgot?
-              </a>
+              </NavLink>
             </div>
-            <Input id="password" name="password" type="password" required />
+            <PasswordInput
+              id="password"
+              name="password"
+              autoComplete="current-password"
+              required
+            />
           </div>
           <Button type="submit" disabled={loading} className="rounded-full">
             {loading ? "Signing in..." : "Sign in"}

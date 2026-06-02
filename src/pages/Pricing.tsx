@@ -9,8 +9,8 @@ const plans = [
     name: "Free",
     price: "$0",
     credits: "20",
-    saves: "1",
-    export: "—",
+    saves: "1 saved item",
+    languages: "English only",
     support: "Community",
     popular: false,
   },
@@ -19,7 +19,7 @@ const plans = [
     price: "$19",
     credits: "250",
     saves: "Unlimited",
-    export: "TXT, DOC",
+    languages: "All 16 languages",
     support: "Email",
     popular: false,
   },
@@ -28,7 +28,7 @@ const plans = [
     price: "$49",
     credits: "1,000",
     saves: "Unlimited",
-    export: "TXT, DOC, CSV",
+    languages: "All 16 languages",
     support: "Priority email",
     popular: true,
   },
@@ -37,7 +37,7 @@ const plans = [
     price: "$149",
     credits: "5,000",
     saves: "Unlimited",
-    export: "All + API",
+    languages: "All 16 languages",
     support: "Dedicated",
     popular: false,
   },
@@ -66,29 +66,21 @@ export default function Pricing() {
     <div className="p-6 md:p-10 max-w-[1280px] mx-auto">
       <div className="text-center mb-12">
         <div className="label-eyebrow mb-2">Plans & credits</div>
-        <h1 className="text-4xl font-semibold tracking-tight">
-          Choose Your Plan
-        </h1>
+        <h1 className="text-4xl font-bold tracking-tight">Choose Your Plan</h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto">
-          After requesting a plan, please send the payment to the account below.
-          Your credits will be added once our team verifies the payment.
+          Request a plan and our team will reach out with secure payment
+          instructions. Your credits are added as soon as payment is verified.
         </p>
 
-        <div className="mt-8 p-4 rounded-xl bg-highlight/10 border border-highlight/20 inline-block text-left">
-          <div className="text-xs font-mono uppercase tracking-widest text-highlight mb-2">
-            Payment Details
+        <div className="mt-8 p-4 rounded-xl bg-secondary/40 border border-border inline-block text-left max-w-md">
+          <div className="text-xs font-mono uppercase tracking-widest text-foreground/80 mb-1">
+            How it works
           </div>
-          <div className="text-sm">
-            <span className="text-muted-foreground">Bank:</span> National Bank
-            of Pakistan <br />
-            <span className="text-muted-foreground">IBAN:</span> PK76 NBPA 0000
-            1234 5678 9012 <br />
-            <span className="text-muted-foreground">Account Name:</span> Lexicon
-            Business Solutions
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-2 italic">
-            * Please mention your email in the payment reference.
-          </p>
+          <ol className="text-sm text-muted-foreground list-decimal pl-5 space-y-0.5">
+            <li>Click <span className="font-medium text-foreground">Request</span> on the plan you want.</li>
+            <li>Our team contacts you with payment options.</li>
+            <li>Credits are added once payment is confirmed.</li>
+          </ol>
         </div>
       </div>
 
@@ -115,7 +107,7 @@ export default function Pricing() {
             <ul className="flex flex-col gap-2.5 text-sm">
               <Row label="Monthly credits" value={p.credits} />
               <Row label="Saved content" value={p.saves} />
-              <Row label="Export formats" value={p.export} />
+              <Row label="Languages" value={p.languages} />
               <Row label="Support" value={p.support} />
             </ul>
             <Button

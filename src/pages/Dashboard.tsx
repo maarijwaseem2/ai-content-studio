@@ -1,5 +1,8 @@
+import { useEffect, useMemo } from "react";
 import { NavLink, Navigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
+import api from "@/lib/api";
+import { getCreditLimit } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
 import {
   Sparkles,
@@ -15,38 +18,75 @@ const stat = (label: string, value: string | number, hint?: string) => ({
   hint,
 });
 
+function mapContentItems(items: any[]) {
+  return items.map((it: any) => ({
+    id: it.id,
+    productName: it.productName,
+    category: it.category,
+    tone: it.tone,
+    language: it.language,
+    createdAt: new Date(it.createdAt).getTime(),
+    input: it.inputJson,
+    content: it.outputJson,
+    saved: it.isSaved,
+  }));
+}
+
 export default function Dashboard() {
-  const { user, credits, items } = useStore();
+  const { user, credits, items, setUser, setItems } = useStore();
   const saved = items.filter((i) => i.saved);
+
+  // Always refresh profile + generations so stats & graph stay in sync.
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([api.get("/user/profile"), api.get("/content")])
+      .then(([{ data: profile }, { data: content }]) => {
+        setUser(profile);
+        setItems(mapContentItems(content));
+      })
+      .catch(() => {});
+  }, [user?.id, setUser, setItems]);
 
   if (user?.role === "ADMIN") {
     return <Navigate to="/app/admin" replace />;
   }
 
+  const creditLimit = getCreditLimit(
+    credits,
+    user?.subscriptionTier,
+    user?.creditLimit,
+  );
+
   const monthStart = new Date();
   monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
   const thisMonth = items.filter((i) => i.createdAt >= +monthStart);
 
   const stats = [
     stat("Total generations", items.length, "all time"),
     stat("Saved content", saved.length, "in library"),
     stat("This month", thisMonth.length, "generations"),
-    stat("Credits left", credits, "of 250"),
+    stat("Credits left", credits, `of ${creditLimit}`),
   ];
 
-  // Tiny inline bar chart from last 7 days
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const start = +new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const end = start + 86400000;
-    return {
-      d,
-      count: items.filter((it) => it.createdAt >= start && it.createdAt < end)
-        .length,
-    };
-  });
-  const max = Math.max(...days.map((x) => x.count), 4);
+  const days = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      d.setHours(0, 0, 0, 0);
+      const start = d.getTime();
+      const end = start + 86400000;
+      return {
+        d,
+        count: items.filter(
+          (it) => it.createdAt >= start && it.createdAt < end,
+        ).length,
+      };
+    });
+  }, [items]);
+
+  const maxDay = Math.max(...days.map((x) => x.count), 1);
+  const hasActivity = days.some((d) => d.count > 0);
 
   return (
     <div className="p-6 md:p-10 flex flex-col gap-8 max-w-[1280px] mx-auto">
@@ -87,24 +127,40 @@ export default function Dashboard() {
             </div>
             <TrendingUp className="size-4 text-muted-foreground" />
           </div>
-          <div className="flex items-end justify-between gap-2 h-40">
-            {days.map((day, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <div className="w-full flex items-end h-full">
-                  <div
-                    className="w-full bg-foreground/80 rounded-t-md transition-all"
-                    style={{
-                      height: `${(day.count / max) * 100}%`,
-                      minHeight: 2,
-                    }}
-                  />
+
+          {!hasActivity ? (
+            <div className="h-40 flex items-center justify-center text-sm text-muted-foreground border border-dashed border-border rounded-lg">
+              No generations in the last 7 days. Create one to see activity here.
+            </div>
+          ) : (
+            <div className="flex items-end justify-between gap-2 h-40">
+              {days.map((day, i) => (
+                <div
+                  key={i}
+                  className="flex-1 flex flex-col items-center gap-2 h-full"
+                >
+                  <div className="w-full flex flex-col items-center justify-end flex-1 min-h-0">
+                    {day.count > 0 && (
+                      <span className="text-[10px] font-mono text-muted-foreground mb-1 tabular-nums">
+                        {day.count}
+                      </span>
+                    )}
+                    <div
+                      className="w-full bg-foreground/80 rounded-t-md transition-all duration-300"
+                      style={{
+                        height: `${Math.max((day.count / maxDay) * 100, day.count > 0 ? 8 : 0)}%`,
+                        minHeight: day.count > 0 ? 4 : 0,
+                      }}
+                      title={`${day.count} generation${day.count !== 1 ? "s" : ""}`}
+                    />
+                  </div>
+                  <div className="text-[10px] font-mono text-muted-foreground shrink-0">
+                    {day.d.toLocaleDateString(undefined, { weekday: "short" })}
+                  </div>
                 </div>
-                <div className="text-[10px] font-mono text-muted-foreground">
-                  {day.d.toLocaleDateString(undefined, { weekday: "short" })}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="surface-card p-6 flex flex-col">

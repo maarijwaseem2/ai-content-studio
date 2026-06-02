@@ -25,6 +25,7 @@ import { useStore } from "@/lib/store";
 import api from "@/lib/api";
 import { Copy, RefreshCw, Save, Sparkles, Pencil, Check } from "lucide-react";
 import { toast } from "sonner";
+import { CategoryCombobox } from "@/components/CategoryCombobox";
 
 const empty: GenerateInput = {
   productName: "",
@@ -68,7 +69,9 @@ export default function Generator() {
     setOutput(null);
 
     try {
-      const { data } = await api.post("/generator/generate", input);
+      const { data } = await api.post("/generator/generate", input, {
+        timeout: 90000, // OpenAI + cold-start can take a while
+      });
       setOutput(data.outputJson);
       setGeneratedId(data.id);
 
@@ -93,7 +96,15 @@ export default function Generator() {
 
       toast.success("Content generated.");
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Generation failed");
+      if (!err?.response) {
+        toast.error(
+          "Cannot reach server. Make sure the backend is running on port 3001.",
+        );
+      } else if (err.response?.status === 401) {
+        toast.error("Session expired. Please sign in again.");
+      } else {
+        toast.error(err.response?.data?.message || "Generation failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -129,11 +140,11 @@ export default function Generator() {
           />
         </Field>
 
-        <Field label="Category">
-          <Input
+        <Field label="Category" hint="Pick or type custom">
+          <CategoryCombobox
             value={input.category}
-            onChange={(e) => set("category", e.target.value)}
-            placeholder="Furniture"
+            onChange={(v) => set("category", v)}
+            placeholder="Select or type a category"
           />
         </Field>
 

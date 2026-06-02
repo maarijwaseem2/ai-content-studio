@@ -3,22 +3,30 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/PasswordInput";
 import api from "@/lib/api";
-import { useStore } from "@/lib/store";
+import { isValidEmail } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function Signup() {
   const nav = useNavigate();
-  const setUser = useStore((s) => s.setUser);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    const email = (formData.get("email") as string).trim();
     const password = formData.get("password") as string;
     const confirm = formData.get("confirm") as string;
 
+    if (!isValidEmail(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    if (!password || password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
     if (password !== confirm) {
       toast.error("Passwords do not match");
       return;
@@ -27,12 +35,21 @@ export default function Signup() {
     setLoading(true);
     try {
       const { data } = await api.post("/auth/signup", { email, password });
-      localStorage.setItem("access_token", data.access_token);
-      setUser(data.user);
+      if (data?.requiresVerification) {
+        toast.success("Account created — verify your OTP to continue");
+        nav("/verify-account", {
+          state: { email: data.email, otp: data.otp },
+        });
+        return;
+      }
       toast.success("Account created!");
-      nav("/app");
+      nav("/login");
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Something went wrong");
+      if (!err?.response) {
+        toast.error("Cannot reach server. Please try again.");
+      } else {
+        toast.error(err.response?.data?.message || "Something went wrong");
+      }
     } finally {
       setLoading(false);
     }
@@ -62,6 +79,7 @@ export default function Signup() {
         <form
           onSubmit={onSubmit}
           className="w-full max-w-sm flex flex-col gap-4"
+          noValidate
         >
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
@@ -73,15 +91,31 @@ export default function Signup() {
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+            />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required />
+            <PasswordInput
+              id="password"
+              name="password"
+              autoComplete="new-password"
+              required
+            />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="confirm">Confirm password</Label>
-            <Input id="confirm" name="confirm" type="password" required />
+            <PasswordInput
+              id="confirm"
+              name="confirm"
+              autoComplete="new-password"
+              required
+            />
           </div>
           <Button
             type="submit"
