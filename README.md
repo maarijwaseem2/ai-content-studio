@@ -11,23 +11,31 @@ Lexicon turns a product brief into publish-ready catalog copy: a description, hi
 
 ## Live demo
 
-Open the hosted app: [https://ai-content-studio-liard.vercel.app](https://ai-content-studio-liard.vercel.app)
-
-The API is a separate NestJS service: [ai-content-studio-backend](https://github.com/maarijwaseem2/ai-content-studio-backend).
+The hosted app is at [https://ai-content-studio-liard.vercel.app](https://ai-content-studio-liard.vercel.app).
 
 ## Screenshots
 
-The images below are labeled placeholders in [`docs/screenshots/`](docs/screenshots/). Replace each file with a capture from the live app; the paths can stay the same.
+Captured from the public live app. The workspace generator, dashboard, and admin portal are account-only, so they are not shown here.
 
-| Landing | Generator |
-| --- | --- |
-| ![Lexicon landing page placeholder](docs/screenshots/landing.png) | ![Lexicon generator placeholder](docs/screenshots/generator.png) |
+### Landing
 
-| Dashboard | Pricing |
-| --- | --- |
-| ![Lexicon dashboard placeholder](docs/screenshots/dashboard.png) | ![Lexicon pricing placeholder](docs/screenshots/pricing.png) |
+![Lexicon landing page](docs/screenshots/landing.png)
 
-![Lexicon admin portal placeholder](docs/screenshots/admin.png)
+### Product preview
+
+The landing page includes this brief-to-copy preview. It is the generator demo available without an account.
+
+![Lexicon public product preview](docs/screenshots/generator.png)
+
+### Features
+
+![Lexicon feature grid, including SEO meta titles and meta descriptions](docs/screenshots/features.png)
+
+### Pricing
+
+Public plans on the landing page. The in-app pricing screen also includes a Business tier.
+
+![Lexicon public pricing](docs/screenshots/pricing.png)
 
 ## Features
 
@@ -37,19 +45,19 @@ Verified against this frontend and the NestJS API.
 - **Product briefs.** A run needs a product name and can include category, features, audience, tone, length, language, and keywords. Tones are Professional, Friendly, SEO-friendly, Luxury, and Simple. Lengths are Short, Medium, and Long. Sixteen languages are available, including English, Urdu, Roman Urdu, Arabic, Hindi, and Chinese (Simplified).
 - **One credit per generation.** The API checks the balance, calls the model, stores the result, and decrements credits by one in the same transaction. Accounts with no credits left are blocked. Admin accounts cannot generate.
 - **Credit-based plans.** The pricing page lists Free ($0), Starter ($19/month), Pro ($49/month), and Business ($149/month). Choosing a plan creates a pending subscription request. An admin approves or rejects it. Approval adds credits: 20 for Free, 250 for Starter, 1,000 for Pro, and 5,000 for Business. A new account is created with 250 credits.
-- **User accounts.** Email and password signup, OTP verification, login, and password reset. The session is a JWT access token. Signed-in users get a dashboard, generator, saved library, history, templates, pricing, and settings. Settings can submit an account-deletion request for admin review. Copy can be edited, copied, and exported as `.txt` or `.doc`.
-- **Admin portal.** Users with the `ADMIN` role land on `/app/admin`. Everyone else is sent back to the workspace, and the API repeats that check with a role guard. The portal shows user, generation, and credit stats, searchable accounts, a generation feed, and queues to approve or reject subscription and deletion requests.
+- **User accounts.** Email signup, OTP verification, sign-in, and account recovery. Signed-in users get a dashboard, generator, saved library, history, templates, pricing, and settings, including an admin-reviewed deletion request. Copy can be edited, copied, and exported as `.txt` or `.doc`.
+- **Admin portal.** Users with the `ADMIN` role land on the admin control center. Everyone else stays in the workspace, and the API repeats that check with a role guard. The portal shows user, generation, and credit stats, searchable accounts, a generation feed, and queues to approve or reject subscription and deletion requests.
 
 ## Architecture
 
-The browser app in this repository talks to the NestJS API over HTTPS. Axios sends the stored access token as a Bearer header. On startup the client calls `GET /health` so a sleeping host can wake before the first real request.
+The browser app in this repository talks to the NestJS API over HTTPS. Requests carry the signed-in user's access token. On startup the client calls the API health route so a sleeping host can wake before the first real request.
 
 ```mermaid
 flowchart TB
   visitor[Visitor or signed-in user]
   fe[Lexicon frontend\nReact 18, Vite, Tailwind, shadcn/ui\nHosted on Vercel]
-  api[NestJS API\nGlobal prefix /api\nJWT and role guards]
-  auth[Auth\nsignup, login, OTP, password reset]
+  api[NestJS API\nJWT and role guards]
+  auth[Auth\nsignup, sign-in, verification, recovery]
   users[Users\nprofile, plan requests, deletion requests]
   gen[Generator\none credit per successful run]
   content[Content\nsave, edit, history]
@@ -58,7 +66,7 @@ flowchart TB
   model[OpenAI chat completions\nJSON copy including meta title\nand meta description]
 
   visitor --> fe
-  fe -->|VITE_API_BASE_URL| api
+  fe -->|HTTPS JSON| api
   api --> auth
   api --> users
   api --> gen
@@ -74,13 +82,17 @@ flowchart TB
 
 | Piece | Responsibility |
 | --- | --- |
-| Frontend | Marketing site, auth screens, workspace, and admin UI. Deployed on Vercel as a single-page app. |
-| Auth | Signup, login, signup OTP, resend, forgot-password, OTP check, and password reset. Passwords are hashed with bcrypt. Sessions use Passport JWT. |
+| Frontend | Marketing site, account screens, workspace, and admin UI. Hosted on Vercel. |
+| Auth | Signup, sign-in, verification codes, and account recovery. Sign-in uses bcrypt hashes and Passport JWT. |
 | Generator | Builds a copywriting prompt, requests JSON from OpenAI, and falls back to a short template if the model call fails. |
 | Content | Lists, updates, and deletes a user's generations, including the saved library. |
 | Users | Profile, subscription requests, and deletion requests. |
 | Admin | Stats, user search, generation feed, and approve/reject actions. Guarded to the `ADMIN` role. |
-| Data | PostgreSQL through Prisma: users, content, subscription requests, password resets, and deletion requests. |
+| Data | PostgreSQL through Prisma: users, content, subscription requests, recovery codes, and deletion requests. |
+
+## Backend
+
+The API is its own NestJS repository: [ai-content-studio-backend](https://github.com/maarijwaseem2/ai-content-studio-backend). It stores accounts and generated copy, applies credit balances, and serves the admin API. This repository is the Lexicon web app.
 
 ## Tech stack
 
@@ -101,45 +113,13 @@ flowchart TB
 - Passport JWT and bcrypt
 - OpenAI SDK
 
-## Local setup
-
-This repository is the frontend. Run the API from [ai-content-studio-backend](https://github.com/maarijwaseem2/ai-content-studio-backend) if you want generation, accounts, and admin actions locally. The API listens on port `3001` unless `PORT` is set.
-
-1. Install dependencies: `npm install`
-2. Run development server: `npm run dev`
-3. Build for production: `npm run build`
-
-`npm run dev` serves the app at `http://localhost:8080`. `npm test` runs the Vitest suite.
-
-## Environment variables
-
-Names only. Keep values in an untracked `.env` file. This repo ignores `.env`.
-
-**Frontend**
-
-| Name | Purpose |
-| --- | --- |
-| `VITE_API_BASE_URL` | Base URL for Axios. Include the API's `/api` prefix. The same value is used for the startup health check. |
-
-**Backend**
-
-| Name | Purpose |
-| --- | --- |
-| `DATABASE_URL` | PostgreSQL connection string for Prisma |
-| `JWT_SECRET` | Signing secret for access tokens |
-| `OPENAI_API_KEY` | Key for the copy model |
-| `AI_MODEL` | Chat model name. The service uses `gpt-4o` when this is unset |
-| `FRONTEND_URL` | Browser origin allowed by CORS |
-| `PORT` | HTTP port. Defaults to `3001` |
-
 ## Roadmap
 
 - Pass length and keywords into the model prompt. The form already collects both and stores them with the brief.
-- Deliver signup and password-reset codes by email.
-- Save profile, password, and default tone and language from Settings through the API.
+- Deliver signup and account-recovery codes by email.
+- Save profile and default tone and language from Settings through the API.
 - Add self-serve checkout so plan upgrades do not wait on a manual approval.
 - Apply every template preset. Luxury and Amazon listings already set the tone.
-- Replace the images in `docs/screenshots/` with captures from the live app.
 
 ## Author
 
